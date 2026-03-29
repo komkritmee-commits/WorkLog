@@ -670,21 +670,41 @@ function saveSettings() {
   showToast('บันทึกการตั้งค่าแล้ว');
 }
 
-async function callGAS(payload) {
-  if (!gasUrl) throw new Error('ยังไม่ได้ตั้งค่า Apps Script URL');
-  const res = await fetch(gasUrl, {
-    method: 'POST', mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+// ใช้ JSONP สำหรับทุก operation — หลีกเลี่ยง CORS ได้ 100%
+function callGASJsonp(params) {
+  return new Promise((resolve, reject) => {
+    if (!gasUrl) { reject(new Error('no url')); return; }
+    const cbName = '_gcb_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
+    const script = document.createElement('script');
+    const p = new URLSearchParams({ ...params, callback: cbName });
+    const timer = setTimeout(() => {
+      reject(new Error('timeout'));
+      try { document.head.removeChild(script); } catch(e) {}
+      delete window[cbName];
+    }, 15000);
+    window[cbName] = (data) => {
+      clearTimeout(timer);
+      resolve(data);
+      try { document.head.removeChild(script); } catch(e) {}
+      delete window[cbName];
+    };
+    script.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error('script error'));
+      try { document.head.removeChild(script); } catch(e) {}
+      delete window[cbName];
+    };
+    script.src = gasUrl + '?' + p.toString();
+    document.head.appendChild(script);
   });
-  return res;
+}
+
+async function callGAS(payload) {
+  return callGASJsonp(payload);
 }
 
 async function callGASGet(action) {
-  if (!gasUrl) throw new Error('no url');
-  const url = gasUrl + '?action=' + action;
-  const res = await fetch(url, { mode: 'cors' });
-  return res.json();
+  return callGASJsonp({ action });
 }
 
 function setConnected(ok) {
@@ -751,10 +771,22 @@ async function addTask() {
   renderAll();
   document.getElementById('f-name').value = '';
   setDefaultDateTimes();
-  showToast('เพิ่มงานแล้ว');
-  // sync to sheet
   if (gasUrl) {
-    try { await callGAS({ action:'add', ...task }); setConnected(true); } catch(e) { setConnected(false); }
+    showToast('⏳ กำลัง sync ไป Google Sheets...');
+    try {
+      const res = await callGAS({ action:'add', ...task });
+      if (res && res.success) {
+        setConnected(true);
+        showToast('บันทึกและ sync Sheets สำเร็จ! ✅');
+      } else {
+        showToast('sync ไม่สำเร็จ: ' + (res&&res.error||'ตรวจสอบ GAS URL'), 'error');
+      }
+    } catch(e) {
+      setConnected(false);
+      showToast('sync error: ' + e.message, 'error');
+    }
+  } else {
+    showToast('บันทึกงานแล้ว (ยังไม่ได้เชื่อม Sheets)');
   }
 }
 
@@ -1105,11 +1137,12 @@ function switchTabDirect(tab) {
   document.querySelectorAll('.tab-btn')[2].classList.add('active');
 }
 
-// Load saved settings
+// Auto-load จาก Sheets ทุกครั้งที่เปิดแอป
 if (gasUrl) {
   document.getElementById('statusDot').className = 'dot-connected';
-  document.getElementById('statusText').textContent = 'ตั้งค่าแล้ว (คลิกรีเฟรชเพื่อโหลด)';
+  document.getElementById('statusText').textContent = 'กำลังโหลดข้อมูล...';
   document.getElementById('statusText').style.color = 'var(--yellow)';
+  setTimeout(() => loadFromSheet(), 800);
 }
 </script>
 </body>
