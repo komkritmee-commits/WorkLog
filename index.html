@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WorkLog</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0f14;
+    --bg2: #13161e;
+    --bg3: #1a1e29;
+    --bg4: #222735;
+    --border: #2a2f3f;
+    --border2: #3a4155;
+    --text: #e8ecf4;
+    --text2: #8b93a8;
+    --text3: #5a6070;
+    --accent: #4d7cfe;
+    --accent2: #3a5fd9;
+    --yellow: #f5c842;
+    --green: #34d17a;
+    --purple: #a56bfa;
+    --red: #f25c54;
+    --orange: #f5874b;
+    --radius: 10px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'IBM Plex Sans Thai',sans-serif; font-size:14px; min-height:100vh; }
+  
+  /* HEADER */
+  .header { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 24px; display:flex; align-items:center; justify-content:space-between; height:54px; position:sticky; top:0; z-index:100; }
+  .logo { font-size:18px; font-weight:700; letter-spacing:-.5px; color:var(--text); display:flex; align-items:center; gap:8px; }
+  .logo span { background:var(--accent); width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; }
+  .header-time { font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text2); }
+  .tabs { display:flex; gap:4px; }
+  .tab-btn { padding:6px 16px; border-radius:6px; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:500; transition:.15s; }
+  .tab-btn.active { background:var(--accent); color:#fff; }
+  .tab-btn:not(.active) { background:transparent; color:var(--text2); }
+  .tab-btn:not(.active):hover { background:var(--bg3); color:var(--text); }
+
+  /* MAIN */
+  .main { padding:24px; max-width:1100px; margin:0 auto; }
+
+  /* STATUS CARDS */
+  .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+  .stat-card { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; cursor:pointer; transition:.15s; }
+  .stat-card:hover { border-color:var(--border2); }
+  .stat-card.active-filter { border-color:currentColor; }
+  .stat-label { font-size:12px; color:var(--text2); margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+  .stat-label::before { content:''; width:8px; height:8px; border-radius:50%; background:currentColor; display:inline-block; }
+  .stat-num { font-size:28px; font-weight:700; font-family:'IBM Plex Mono',monospace; }
+  .stat-card.s-all { color:var(--text); }
+  .stat-card.s-todo { color:var(--yellow); }
+  .stat-card.s-doing { color:var(--accent); }
+  .stat-card.s-done { color:var(--green); }
+  .stat-card.s-wait { color:var(--purple); }
+
+  /* PANELS */
+  .panel { background:var(--bg2); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:16px; }
+  .panel-header { padding:14px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; font-weight:600; font-size:13px; }
+  .panel-body { padding:20px; }
+
+  /* FORM */
+  .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+  .form-row.full { grid-template-columns:1fr; }
+  .form-row.three { grid-template-columns:1fr 1fr 1fr; }
+  label { display:block; font-size:11px; color:var(--text2); margin-bottom:5px; font-weight:500; text-transform:uppercase; letter-spacing:.5px; }
+  input, select, textarea { width:100%; background:var(--bg3); border:1px solid var(--border); border-radius:7px; color:var(--text); font-family:inherit; font-size:13px; padding:9px 12px; outline:none; transition:.15s; }
+  input:focus, select:focus, textarea:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(77,124,254,.15); }
+  textarea { resize:vertical; min-height:70px; }
+  select option { background:var(--bg3); }
+  .datetime-group { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  
+  .btn { padding:9px 20px; border-radius:7px; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:600; transition:.15s; display:inline-flex; align-items:center; gap:6px; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:var(--accent2); }
+  .btn-sm { padding:5px 12px; font-size:12px; border-radius:5px; }
+  .btn-outline { background:transparent; border:1px solid var(--border2); color:var(--text2); }
+  .btn-outline:hover { background:var(--bg3); color:var(--text); }
+  .btn-danger { background:rgba(242,92,84,.15); color:var(--red); border:1px solid rgba(242,92,84,.3); }
+  .btn-danger:hover { background:rgba(242,92,84,.25); }
+
+  /* TABLE */
+  .table-wrap { overflow-x:auto; }
+  table { width:100%; border-collapse:collapse; }
+  th { padding:10px 14px; text-align:left; font-size:11px; color:var(--text3); font-weight:600; text-transform:uppercase; letter-spacing:.5px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:rgba(255,255,255,.02); }
+  .task-name { font-weight:500; color:var(--text); max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .task-type { font-size:11px; color:var(--text2); }
+
+  /* BADGE */
+  .badge { padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; white-space:nowrap; }
+  .badge-todo { background:rgba(245,200,66,.15); color:var(--yellow); }
+  .badge-doing { background:rgba(77,124,254,.15); color:var(--accent); }
+  .badge-done { background:rgba(52,209,122,.15); color:var(--green); }
+  .badge-wait { background:rgba(165,107,250,.15); color:var(--purple); }
+
+  /* STATUS SELECT */
+  .status-select { background:var(--bg3); border:1px solid var(--border); border-radius:5px; color:var(--text); font-size:12px; padding:4px 8px; cursor:pointer; font-family:inherit; }
+
+  /* DATETIME DISPLAY */
+  .dt-cell { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text2); white-space:nowrap; }
+  .dt-cell .date-part { color:var(--text); font-size:12px; }
+
+  /* DASHBOARD */
+  .dash-controls { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+  .month-chips { display:flex; gap:6px; flex-wrap:wrap; }
+  .month-chip { padding:5px 14px; border-radius:20px; border:1px solid var(--border); background:transparent; color:var(--text2); font-size:12px; cursor:pointer; font-family:inherit; transition:.15s; }
+  .month-chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .month-chip:hover:not(.active) { border-color:var(--border2); color:var(--text); }
+
+  .dash-grid { display:grid; grid-template-columns:2fr 1fr; gap:16px; margin-bottom:16px; }
+  .dash-grid2 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+
+  /* BAR CHART */
+  .bar-chart { padding:20px; }
+  .chart-title { font-size:12px; color:var(--text2); margin-bottom:16px; font-weight:500; }
+  .bars { display:flex; align-items:flex-end; gap:8px; height:140px; }
+  .bar-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .bar-wrap { width:100%; display:flex; align-items:flex-end; justify-content:center; flex:1; }
+  .bar { width:70%; border-radius:4px 4px 0 0; transition:all .4s cubic-bezier(.4,0,.2,1); min-height:3px; position:relative; cursor:pointer; }
+  .bar:hover { filter:brightness(1.2); }
+  .bar-label { font-size:10px; color:var(--text3); font-family:'IBM Plex Mono',monospace; }
+  .bar-val { font-size:10px; font-weight:600; font-family:'IBM Plex Mono',monospace; }
+
+  /* DONUT */
+  .donut-wrap { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; gap:16px; }
+  .donut-legend { width:100%; }
+  .legend-item { display:flex; align-items:center; justify-content:space-between; padding:4px 0; font-size:12px; }
+  .legend-dot { width:8px; height:8px; border-radius:50%; margin-right:8px; display:inline-block; }
+  svg.donut { overflow:visible; }
+
+  /* TYPE SUMMARY */
+  .type-list { padding:16px 20px; }
+  .type-item { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); }
+  .type-item:last-child { border-bottom:none; }
+  .type-bar-bg { flex:1; height:4px; background:var(--bg4); border-radius:2px; margin:0 12px; overflow:hidden; }
+  .type-bar-fill { height:100%; border-radius:2px; background:var(--accent); transition:.6s; }
+  .type-count { font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text2); min-width:20px; text-align:right; }
+
+  /* EMPTY */
+  .empty-state { text-align:center; padding:60px 20px; color:var(--text3); }
+  .empty-state .icon { font-size:40px; margin-bottom:12px; opacity:.4; }
+
+  /* GOOGLE SHEET CONFIG */
+  .sheet-config { background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius); padding:16px 20px; margin-bottom:20px; }
+  .sheet-config-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .sheet-status { font-size:11px; display:flex; align-items:center; gap:5px; }
+  .dot-connected { width:7px; height:7px; border-radius:50%; background:var(--green); animation:pulse 2s infinite; }
+  .dot-disconnected { width:7px; height:7px; border-radius:50%; background:var(--text3); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:200; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+  .modal { background:var(--bg2); border:1px solid var(--border2); border-radius:12px; padding:24px; width:90%; max-width:520px; box-shadow:var(--shadow); }
+  .modal-title { font-size:15px; font-weight:600; margin-bottom:20px; display:flex; align-items:center; gap:8px; }
+  .modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; }
+  .hidden { display:none !important; }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--bg3); border:1px solid var(--border2); border-radius:8px; padding:12px 18px; font-size:13px; box-shadow:var(--shadow); z-index:300; transform:translateY(100px); opacity:0; transition:.3s; display:flex; align-items:center; gap:8px; }
+  .toast.show { transform:translateY(0); opacity:1; }
+  .toast.success { border-left:3px solid var(--green); }
+  .toast.error { border-left:3px solid var(--red); }
+
+  /* TABS */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  .filter-row { display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap; }
+  .search-input { flex:1; min-width:160px; }
+
+  /* PERIOD LABEL */
+  .period-label { font-size:11px; color:var(--text3); font-family:'IBM Plex Mono',monospace; }
+
+  /* LOADING */
+  .spinner { width:14px; height:14px; border:2px solid rgba(255,255,255,.2); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; display:inline-block; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+
+  /* Responsive */
+  @media(max-width:720px) {
+    .stats-row { grid-template-columns:repeat(2,1fr); }
+    .dash-grid { grid-template-columns:1fr; }
+    .dash-grid2 { grid-template-columns:1fr 1fr; }
+    .form-row.three { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <span>📋</span> WorkLog
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('log')">บันทึกงาน</button>
+    <button class="tab-btn" onclick="switchTab('dash')">แดชบอร์ด</button>
+    <button class="tab-btn" onclick="switchTab('settings')">ตั้งค่า</button>
+  </div>
+  <div class="header-time" id="clockEl"></div>
+</div>
+
+<div class="main">
+
+  <!-- GOOGLE SHEET STATUS -->
+  <div class="sheet-config">
+    <div class="sheet-config-row">
+      <span style="font-size:12px;color:var(--text2);font-weight:500;">🔗 Google Sheets:</span>
+      <input id="sheetIdInput" placeholder="วาง Google Sheet ID ที่นี่..." style="flex:1;min-width:200px;font-size:12px;padding:6px 10px;" />
+      <input id="gasUrlInput" placeholder="Google Apps Script URL (Web App)..." style="flex:1;min-width:200px;font-size:12px;padding:6px 10px;" />
+      <button class="btn btn-primary btn-sm" onclick="connectSheet()">เชื่อมต่อ</button>
+      <div class="sheet-status" id="sheetStatus">
+        <div class="dot-disconnected" id="statusDot"></div>
+        <span id="statusText" style="font-size:11px;color:var(--text3)">ยังไม่ได้เชื่อมต่อ</span>
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);margin-top:8px;">
+      ⚠️ ต้องสร้าง Google Apps Script ก่อน — <span style="color:var(--accent);cursor:pointer;" onclick="showGASGuide()">ดูวิธีทำ</span>
+    </div>
+  </div>
+
+  <!-- LOG VIEW -->
+  <div class="view active" id="view-log">
+    <!-- STAT CARDS -->
+    <div class="stats-row">
+      <div class="stat-card s-all" id="card-all" onclick="filterByStatus('')">
+        <div class="stat-label">งานทั้งหมด</div>
+        <div class="stat-num" id="cnt-all">0</div>
+      </div>
+      <div class="stat-card s-todo" id="card-todo" onclick="filterByStatus('รอดำเนินการ')">
+        <div class="stat-label">รอดำเนินการ</div>
+        <div class="stat-num" id="cnt-todo">0</div>
+      </div>
+      <div class="stat-card s-doing" id="card-doing" onclick="filterByStatus('กำลังทำ')">
+        <div class="stat-label">กำลังทำ</div>
+        <div class="stat-num" id="cnt-doing">0</div>
+      </div>
+      <div class="stat-card s-done" id="card-done" onclick="filterByStatus('เสร็จแล้ว')">
+        <div class="stat-label">เสร็จแล้ว</div>
+        <div class="stat-num" id="cnt-done">0</div>
+      </div>
+    </div>
+
+    <!-- ADD FORM -->
+    <div class="panel" id="addPanel">
+      <div class="panel-header">
+        <span>➕</span> เพิ่มงานใหม่
+        <button class="btn btn-sm btn-outline" style="margin-left:auto;" onclick="toggleAddPanel()">ซ่อน/แสดง</button>
+      </div>
+      <div class="panel-body" id="addPanelBody">
+        <div class="form-row full">
+          <div>
+            <label>ชื่องาน / รายละเอียด</label>
+            <textarea id="f-name" placeholder="ระบุงาน..."></textarea>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>ประเภทงาน</label>
+            <select id="f-type">
+              <option value="งานทั่วไป">งานทั่วไป</option>
+              <option value="ประชุม">ประชุม</option>
+              <option value="รายงาน">รายงาน</option>
+              <option value="วิเคราะห์">วิเคราะห์</option>
+              <option value="อื่นๆ">อื่นๆ</option>
+            </select>
+          </div>
+          <div>
+            <label>สถานะ</label>
+            <select id="f-status">
+              <option value="รอดำเนินการ">⏳ รอดำเนินการ</option>
+              <option value="กำลังทำ">🔵 กำลังทำ</option>
+              <option value="เสร็จแล้ว">✅ เสร็จแล้ว</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div>
+            <label>วันที่-เวลา เริ่มต้น</label>
+            <div class="datetime-group">
+              <input type="date" id="f-start-date" />
+              <input type="time" id="f-start-time" />
+            </div>
+          </div>
+          <div>
+            <label>วันที่-เวลา สิ้นสุด</label>
+            <div class="datetime-group">
+              <input type="date" id="f-end-date" />
+              <input type="time" id="f-end-time" />
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="addTask()">
+          <span id="addBtnText">บันทึกงาน</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- TASK LIST -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>📋</span> รายการงานปัจจุบัน
+        <span style="font-size:11px;color:var(--text3);margin-left:4px;" id="filterLabel">(แสดงทั้งหมด)</span>
+        <button class="btn btn-sm btn-outline" style="margin-left:auto;" onclick="loadFromSheet()">
+          <span id="refreshIcon">🔄</span> รีเฟรช
+        </button>
+      </div>
+      <div class="panel-body" style="padding:0;">
+        <div class="filter-row" style="padding:12px 16px;">
+          <input class="search-input" id="searchInput" placeholder="🔍 ค้นหางาน..." oninput="renderTable()" />
+          <select id="filterType" onchange="renderTable()" style="width:140px;">
+            <option value="">ทุกประเภท</option>
+            <option value="งานทั่วไป">งานทั่วไป</option>
+            <option value="ประชุม">ประชุม</option>
+            <option value="รายงาน">รายงาน</option>
+            <option value="วิเคราะห์">วิเคราะห์</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ชื่องาน</th>
+                <th>ประเภท</th>
+                <th>สถานะ</th>
+                <th>วันที่เริ่ม</th>
+                <th>เวลาเริ่ม</th>
+                <th>วันที่สิ้นสุด</th>
+                <th>เวลาสิ้นสุด</th>
+                <th>เดือน/ปี</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="taskTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD VIEW -->
+  <div class="view" id="view-dash">
+    <div class="dash-controls">
+      <span style="font-size:13px;font-weight:600;">ย้อนหลัง:</span>
+      <div class="month-chips" id="monthChips"></div>
+      <button class="btn btn-sm btn-outline" onclick="selectAllMonths()">ทั้งหมด</button>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:16px;font-family:'IBM Plex Mono',monospace;" id="dashPeriodLabel"></div>
+    
+    <div class="dash-grid">
+      <div class="panel">
+        <div class="panel-header"><span>📊</span> งานตามสถานะ (รายเดือน)</div>
+        <div class="bar-chart">
+          <div class="bars" id="barChart"></div>
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap;">
+            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--yellow)"></span>รอดำเนินการ</span>
+            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--accent)"></span>กำลังทำ</span>
+            <span style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--green)"></span>เสร็จแล้ว</span>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>🍩</span> สัดส่วนสถานะ</div>
+        <div class="donut-wrap">
+          <svg class="donut" width="140" height="140" viewBox="0 0 140 140" id="donutSvg"></svg>
+          <div class="donut-legend" id="donutLegend"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-grid2">
+      <div class="panel">
+        <div class="panel-header"><span>📁</span> งานตามประเภท</div>
+        <div class="type-list" id="typeList"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>📈</span> สรุปภาพรวม</div>
+        <div class="panel-body">
+          <div style="display:grid;gap:12px;" id="summaryGrid"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span>⏱️</span> ระยะเวลาเฉลี่ย</div>
+        <div class="panel-body" id="durationPanel"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS VIEW -->
+  <div class="view" id="view-settings">
+    <div class="panel">
+      <div class="panel-header"><span>⚙️</span> ตั้งค่าการเชื่อมต่อ</div>
+      <div class="panel-body">
+        <div class="form-row full" style="margin-bottom:16px;">
+          <div>
+            <label>Google Sheet ID</label>
+            <input id="s-sheetId" placeholder="ตัวอย่าง: 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms" />
+            <div style="font-size:11px;color:var(--text3);margin-top:4px;">หา ID จาก URL ของ Google Sheets ระหว่าง /d/ และ /edit</div>
+          </div>
+        </div>
+        <div class="form-row full" style="margin-bottom:16px;">
+          <div>
+            <label>Google Apps Script Web App URL</label>
+            <input id="s-gasUrl" placeholder="https://script.google.com/macros/s/..." />
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">💾 บันทึกการตั้งค่า</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header"><span>📖</span> วิธีสร้าง Google Apps Script</div>
+      <div class="panel-body">
+        <div id="gasGuideContent" style="font-size:13px;line-height:1.8;color:var(--text2);">
+          <p style="margin-bottom:12px;color:var(--text);font-weight:500;">ขั้นตอนการสร้าง Google Apps Script Web App:</p>
+          <ol style="padding-left:20px;display:grid;gap:8px;">
+            <li>เปิด <strong style="color:var(--accent)">script.google.com</strong> → สร้างโปรเจกต์ใหม่</li>
+            <li>ลบโค้ดเดิมออก แล้วแทนที่ด้วยโค้ดด้านล่าง</li>
+            <li>แก้ไข <code style="background:var(--bg3);padding:1px 6px;border-radius:3px;">SHEET_ID</code> ให้ตรงกับ Google Sheet ID</li>
+            <li>บันทึก → Deploy → New Deployment → Web App</li>
+            <li>ตั้งค่า Execute as: Me, Who has access: Anyone</li>
+            <li>คัดลอก URL มาวางในช่องด้านบน</li>
+          </ol>
+          <div style="margin-top:16px;background:var(--bg3);border-radius:8px;padding:16px;border:1px solid var(--border);">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px;font-weight:600;">โค้ด Google Apps Script:</div>
+            <pre style="font-size:11px;color:var(--green);overflow-x:auto;white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;line-height:1.6;" id="gasCodePre"></pre>
+          </div>
+          <button class="btn btn-outline btn-sm" style="margin-top:12px;" onclick="copyGASCode()">📋 คัดลอกโค้ด</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay hidden" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏️ แก้ไขงาน</div>
+    <div class="form-row full">
+      <div>
+        <label>ชื่องาน / รายละเอียด</label>
+        <textarea id="e-name"></textarea>
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>ประเภทงาน</label>
+        <select id="e-type">
+          <option>งานทั่วไป</option><option>ประชุม</option><option>รายงาน</option><option>วิเคราะห์</option><option>อื่นๆ</option>
+        </select>
+      </div>
+      <div>
+        <label>สถานะ</label>
+        <select id="e-status">
+          <option value="รอดำเนินการ">⏳ รอดำเนินการ</option>
+          <option value="กำลังทำ">🔵 กำลังทำ</option>
+          <option value="เสร็จแล้ว">✅ เสร็จแล้ว</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>วันที่-เวลา เริ่มต้น</label>
+        <div class="datetime-group">
+          <input type="date" id="e-start-date" /><input type="time" id="e-start-time" />
+        </div>
+      </div>
+      <div>
+        <label>วันที่-เวลา สิ้นสุด</label>
+        <div class="datetime-group">
+          <input type="date" id="e-end-date" /><input type="time" id="e-end-time" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let tasks = JSON.parse(localStorage.getItem('wl_tasks') || '[]');
+let gasUrl = localStorage.getItem('wl_gasUrl') || '';
+let sheetId = localStorage.getItem('wl_sheetId') || '';
+let activeFilter = '';
+let editingId = null;
+let selectedMonths = [];
+
+// Init
+document.getElementById('gasUrlInput').value = gasUrl;
+document.getElementById('sheetIdInput').value = sheetId;
+document.getElementById('s-gasUrl').value = gasUrl;
+document.getElementById('s-sheetId').value = sheetId;
+
+// ===== CLOCK =====
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clockEl').textContent = now.toLocaleString('th-TH', {
+    day:'2-digit', month:'2-digit', year:'numeric',
+    hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  });
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ===== DATETIME DEFAULTS =====
+function setDefaultDateTimes() {
+  const now = new Date();
+  const d = now.toISOString().slice(0,10);
+  const t = now.toTimeString().slice(0,5);
+  document.getElementById('f-start-date').value = d;
+  document.getElementById('f-start-time').value = t;
+  document.getElementById('f-end-date').value = d;
+  document.getElementById('f-end-time').value = t;
+}
+setDefaultDateTimes();
+
+// ===== TAB =====
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (tab === 'dash') renderDashboard();
+}
+
+// ===== TOAST =====
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = type === 'success' ? '✅ ' + msg : '❌ ' + msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// ===== GAS CODE =====
+const gasCode = `const SHEET_ID = "YOUR_SHEET_ID_HERE";
+const SHEET_NAME = "WorkLog_DATA";
+
+function doGet(e) {
+  return handleRequest(e);
+}
+
+function doPost(e) {
+  return handleRequest(e);
+}
+
+function handleRequest(e) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const action = (e.parameter && e.parameter.action) || 
+                 (e.postData && JSON.parse(e.postData.contents).action) || '';
+  const data = e.postData ? JSON.parse(e.postData.contents) : e.parameter;
+  
+  let result;
+  try {
+    if (action === 'getAll') {
+      result = getAllTasks(sheet);
+    } else if (action === 'add') {
+      result = addTask(sheet, data);
+    } else if (action === 'update') {
+      result = updateTask(sheet, data);
+    } else if (action === 'delete') {
+      result = deleteTask(sheet, data.id);
+    }
+  } catch(err) {
+    result = { error: err.message };
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function ensureHeader(sheet) {
+  if (sheet.getLastRow() < 1 || !sheet.getRange(1,1).getValue()) {
+    sheet.getRange(1,1,1,9).setValues([[
+      'ID','ชื่องาน','ประเภทงาน','สถานะ',
+      'วันที่เริ่ม','เวลาเริ่ม','วันที่สิ้นสุด','เวลาสิ้นสุด','เดือน/ปี'
+    ]]);
+  }
+}
+
+function getAllTasks(sheet) {
+  ensureHeader(sheet);
+  const last = sheet.getLastRow();
+  if (last < 2) return { tasks: [] };
+  const rows = sheet.getRange(2, 1, last-1, 9).getValues();
+  const tasks = rows.filter(r => r[0]).map(r => ({
+    id: r[0], name: r[1], type: r[2], status: r[3],
+    startDate: r[4], startTime: r[5], endDate: r[6], endTime: r[7], monthYear: r[8]
+  }));
+  return { tasks };
+}
+
+function addTask(sheet, data) {
+  ensureHeader(sheet);
+  sheet.appendRow([
+    data.id, data.name, data.type, data.status,
+    data.startDate, data.startTime, data.endDate, data.endTime, data.monthYear
+  ]);
+  return { success: true };
+}
+
+function updateTask(sheet, data) {
+  const last = sheet.getLastRow();
+  if (last < 2) return { error: 'Not found' };
+  const ids = sheet.getRange(2,1,last-1,1).getValues();
+  for (let i = 0; i < ids.length; i++) {
+    if (ids[i][0] == data.id) {
+      const row = i + 2;
+      sheet.getRange(row, 1, 1, 9).setValues([[
+        data.id, data.name, data.type, data.status,
+        data.startDate, data.startTime, data.endDate, data.endTime, data.monthYear
+      ]]);
+      return { success: true };
+    }
+  }
+  return { error: 'Not found' };
+}
+
+function deleteTask(sheet, id) {
+  const last = sheet.getLastRow();
+  if (last < 2) return { error: 'Not found' };
+  const ids = sheet.getRange(2,1,last-1,1).getValues();
+  for (let i = ids.length - 1; i >= 0; i--) {
+    if (ids[i][0] == id) {
+      sheet.deleteRow(i + 2);
+      return { success: true };
+    }
+  }
+  return { error: 'Not found' };
+}`;
+
+document.getElementById('gasCodePre').textContent = gasCode;
+
+function copyGASCode() {
+  navigator.clipboard.writeText(gasCode).then(() => showToast('คัดลอกโค้ดแล้ว!'));
+}
+
+// ===== SHEET CONNECTION =====
+function connectSheet() {
+  gasUrl = document.getElementById('gasUrlInput').value.trim();
+  sheetId = document.getElementById('sheetIdInput').value.trim();
+  localStorage.setItem('wl_gasUrl', gasUrl);
+  localStorage.setItem('wl_sheetId', sheetId);
+  document.getElementById('s-gasUrl').value = gasUrl;
+  document.getElementById('s-sheetId').value = sheetId;
+  if (gasUrl) {
+    loadFromSheet();
+  } else {
+    showToast('กรุณากรอก Apps Script URL', 'error');
+  }
+}
+
+function saveSettings() {
+  gasUrl = document.getElementById('s-gasUrl').value.trim();
+  sheetId = document.getElementById('s-sheetId').value.trim();
+  localStorage.setItem('wl_gasUrl', gasUrl);
+  localStorage.setItem('wl_sheetId', sheetId);
+  document.getElementById('gasUrlInput').value = gasUrl;
+  document.getElementById('sheetIdInput').value = sheetId;
+  showToast('บันทึกการตั้งค่าแล้ว');
+}
+
+async function callGAS(payload) {
+  if (!gasUrl) throw new Error('ยังไม่ได้ตั้งค่า Apps Script URL');
+  const res = await fetch(gasUrl, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  return res;
+}
+
+async function callGASGet(action) {
+  if (!gasUrl) throw new Error('no url');
+  const url = gasUrl + '?action=' + action;
+  const res = await fetch(url, { mode: 'cors' });
+  return res.json();
+}
+
+function setConnected(ok) {
+  document.getElementById('statusDot').className = ok ? 'dot-connected' : 'dot-disconnected';
+  document.getElementById('statusText').textContent = ok ? 'เชื่อมต่อแล้ว' : 'ไม่สามารถเชื่อมต่อได้';
+  document.getElementById('statusText').style.color = ok ? 'var(--green)' : 'var(--red)';
+}
+
+async function loadFromSheet() {
+  if (!gasUrl) { showToast('กรุณาตั้งค่า Apps Script URL ก่อน', 'error'); return; }
+  document.getElementById('refreshIcon').textContent = '⏳';
+  try {
+    const data = await callGASGet('getAll');
+    if (data.tasks) {
+      tasks = data.tasks.map(t => ({
+        id: t.id || String(Date.now()),
+        name: t.name || t.ชื่องาน || '',
+        type: t.type || t.ประเภทงาน || 'งานทั่วไป',
+        status: t.status || t.สถานะ || 'รอดำเนินการ',
+        startDate: t.startDate || t.วันที่เริ่ม || '',
+        startTime: t.startTime || t.เวลาเริ่ม || '',
+        endDate: t.endDate || t.วันที่สิ้นสุด || '',
+        endTime: t.endTime || t.เวลาสิ้นสุด || '',
+        monthYear: t.monthYear || t['เดือน/ปี'] || ''
+      }));
+      localStorage.setItem('wl_tasks', JSON.stringify(tasks));
+      renderAll();
+      setConnected(true);
+      showToast('โหลดข้อมูลจาก Google Sheets สำเร็จ!');
+    }
+  } catch(e) {
+    setConnected(false);
+    showToast('ไม่สามารถโหลดข้อมูลได้ - ตรวจสอบ URL', 'error');
+  }
+  document.getElementById('refreshIcon').textContent = '🔄';
+}
+
+// ===== TASK CRUD =====
+function genId() { return 'T' + Date.now() + Math.random().toString(36).slice(2,6).toUpperCase(); }
+
+function getMonthYear(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return months[d.getMonth()] + ' ' + (d.getFullYear() + 543);
+}
+
+async function addTask() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) { showToast('กรุณาระบุชื่องาน', 'error'); return; }
+  const task = {
+    id: genId(),
+    name,
+    type: document.getElementById('f-type').value,
+    status: document.getElementById('f-status').value,
+    startDate: document.getElementById('f-start-date').value,
+    startTime: document.getElementById('f-start-time').value,
+    endDate: document.getElementById('f-end-date').value,
+    endTime: document.getElementById('f-end-time').value,
+    monthYear: getMonthYear(document.getElementById('f-start-date').value)
+  };
+  tasks.unshift(task);
+  localStorage.setItem('wl_tasks', JSON.stringify(tasks));
+  renderAll();
+  document.getElementById('f-name').value = '';
+  setDefaultDateTimes();
+  showToast('เพิ่มงานแล้ว');
+  // sync to sheet
+  if (gasUrl) {
+    try { await callGAS({ action:'add', ...task }); setConnected(true); } catch(e) { setConnected(false); }
+  }
+}
+
+async function deleteTask(id) {
+  if (!confirm('ลบงานนี้?')) return;
+  tasks = tasks.filter(t => t.id !== id);
+  localStorage.setItem('wl_tasks', JSON.stringify(tasks));
+  renderAll();
+  showToast('ลบงานแล้ว');
+  if (gasUrl) {
+    try { await callGAS({ action:'delete', id }); } catch(e) {}
+  }
+}
+
+function openEdit(id) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  editingId = id;
+  document.getElementById('e-name').value = t.name;
+  document.getElementById('e-type').value = t.type;
+  document.getElementById('e-status').value = t.status;
+  document.getElementById('e-start-date').value = t.startDate;
+  document.getElementById('e-start-time').value = t.startTime;
+  document.getElementById('e-end-date').value = t.endDate;
+  document.getElementById('e-end-time').value = t.endTime;
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+async function saveEdit() {
+  const t = tasks.find(x => x.id === editingId);
+  if (!t) return;
+  t.name = document.getElementById('e-name').value;
+  t.type = document.getElementById('e-type').value;
+  t.status = document.getElementById('e-status').value;
+  t.startDate = document.getElementById('e-start-date').value;
+  t.startTime = document.getElementById('e-start-time').value;
+  t.endDate = document.getElementById('e-end-date').value;
+  t.endTime = document.getElementById('e-end-time').value;
+  t.monthYear = getMonthYear(t.startDate);
+  localStorage.setItem('wl_tasks', JSON.stringify(tasks));
+  closeModal();
+  renderAll();
+  showToast('แก้ไขงานแล้ว');
+  if (gasUrl) {
+    try { await callGAS({ action:'update', ...t }); } catch(e) {}
+  }
+}
+
+async function quickChangeStatus(id, newStatus) {
+  const t = tasks.find(x => x.id === id);
+  if (!t) return;
+  t.status = newStatus;
+  localStorage.setItem('wl_tasks', JSON.stringify(tasks));
+  renderAll();
+  showToast('อัปเดตสถานะแล้ว');
+  if (gasUrl) {
+    try { await callGAS({ action:'update', ...t }); } catch(e) {}
+  }
+}
+
+function closeModal() { document.getElementById('editModal').classList.add('hidden'); editingId = null; }
+
+// ===== RENDER =====
+function filterByStatus(s) {
+  activeFilter = s;
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active-filter'));
+  if (s === '') document.getElementById('card-all').classList.add('active-filter');
+  else if (s === 'รอดำเนินการ') document.getElementById('card-todo').classList.add('active-filter');
+  else if (s === 'กำลังทำ') document.getElementById('card-doing').classList.add('active-filter');
+  else if (s === 'เสร็จแล้ว') document.getElementById('card-done').classList.add('active-filter');
+  document.getElementById('filterLabel').textContent = s ? `(กรอง: ${s})` : '(แสดงทั้งหมด)';
+  renderTable();
+}
+
+function getBadge(status) {
+  const map = { 'รอดำเนินการ':'badge-todo','กำลังทำ':'badge-doing','เสร็จแล้ว':'badge-done' };
+  return `<span class="badge ${map[status]||'badge-todo'}">${status}</span>`;
+}
+
+function fmtDate(d) {
+  if (!d) return '<span style="color:var(--text3)">-</span>';
+  const dt = new Date(d);
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `<span class="date-part">${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()+543}</span>`;
+}
+
+function renderTable() {
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const fType = document.getElementById('filterType').value;
+  let filtered = tasks.filter(t => {
+    if (activeFilter && t.status !== activeFilter) return false;
+    if (fType && t.type !== fType) return false;
+    if (search && !t.name.toLowerCase().includes(search) && !t.type.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const tbody = document.getElementById('taskTbody');
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="icon">📭</div><div>ไม่มีรายการงาน</div></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = filtered.map(t => `
+    <tr>
+      <td>
+        <div class="task-name" title="${t.name}">${t.name}</div>
+      </td>
+      <td><span class="task-type">${t.type}</span></td>
+      <td>
+        <select class="status-select" onchange="quickChangeStatus('${t.id}', this.value)">
+          <option ${t.status==='รอดำเนินการ'?'selected':''}>รอดำเนินการ</option>
+          <option ${t.status==='กำลังทำ'?'selected':''}>กำลังทำ</option>
+          <option ${t.status==='เสร็จแล้ว'?'selected':''}>เสร็จแล้ว</option>
+        </select>
+      </td>
+      <td class="dt-cell">${fmtDate(t.startDate)}</td>
+      <td class="dt-cell">${t.startTime||'-'}</td>
+      <td class="dt-cell">${fmtDate(t.endDate)}</td>
+      <td class="dt-cell">${t.endTime||'-'}</td>
+      <td class="dt-cell">${t.monthYear||getMonthYear(t.startDate)||'-'}</td>
+      <td>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-outline" onclick="openEdit('${t.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteTask('${t.id}')">🗑️</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderStats() {
+  const total = tasks.length;
+  const todo = tasks.filter(t => t.status === 'รอดำเนินการ').length;
+  const doing = tasks.filter(t => t.status === 'กำลังทำ').length;
+  const done = tasks.filter(t => t.status === 'เสร็จแล้ว').length;
+  document.getElementById('cnt-all').textContent = total;
+  document.getElementById('cnt-todo').textContent = todo;
+  document.getElementById('cnt-doing').textContent = doing;
+  document.getElementById('cnt-done').textContent = done;
+}
+
+function renderAll() {
+  renderStats();
+  renderTable();
+}
+renderAll();
+
+// ===== DASHBOARD =====
+function getAvailableMonths() {
+  const set = new Set();
+  tasks.forEach(t => {
+    const my = t.monthYear || getMonthYear(t.startDate);
+    if (my) set.add(my);
+  });
+  // also last 6 months
+  const months = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    set.add(months[d.getMonth()] + ' ' + (d.getFullYear() + 543));
+  }
+  return [...set].sort((a, b) => {
+    const parse = s => {
+      const [m, y] = s.split(' ');
+      return parseInt(y) * 100 + months.indexOf(m);
+    };
+    return parse(a) - parse(b);
+  });
+}
+
+function buildMonthChips() {
+  const months = getAvailableMonths();
+  if (!selectedMonths.length) selectedMonths = months.slice(-3);
+  const c = document.getElementById('monthChips');
+  c.innerHTML = months.map(m =>
+    `<button class="month-chip ${selectedMonths.includes(m)?'active':''}" onclick="toggleMonth('${m}')">${m}</button>`
+  ).join('');
+}
+
+function toggleMonth(m) {
+  if (selectedMonths.includes(m)) {
+    selectedMonths = selectedMonths.filter(x => x !== m);
+  } else {
+    selectedMonths.push(m);
+  }
+  buildMonthChips();
+  renderDashboardCharts();
+}
+
+function selectAllMonths() {
+  selectedMonths = getAvailableMonths();
+  buildMonthChips();
+  renderDashboardCharts();
+}
+
+function getFilteredTasks() {
+  if (!selectedMonths.length) return tasks;
+  return tasks.filter(t => {
+    const my = t.monthYear || getMonthYear(t.startDate);
+    return selectedMonths.includes(my);
+  });
+}
+
+function renderDashboard() {
+  buildMonthChips();
+  renderDashboardCharts();
+}
+
+function renderDashboardCharts() {
+  const filtered = getFilteredTasks();
+  const label = selectedMonths.length ? selectedMonths.join(', ') : 'ทั้งหมด';
+  document.getElementById('dashPeriodLabel').textContent = `แสดงช่วง: ${label} | รวม ${filtered.length} งาน`;
+
+  // BAR CHART by month
+  const months = getAvailableMonths().filter(m => selectedMonths.includes(m));
+  const barEl = document.getElementById('barChart');
+  if (!months.length) { barEl.innerHTML = '<div style="color:var(--text3);padding:20px;">ไม่มีข้อมูล</div>'; }
+  else {
+    const monthData = months.map(m => {
+      const mt = tasks.filter(t => (t.monthYear || getMonthYear(t.startDate)) === m);
+      return {
+        m, total: mt.length,
+        todo: mt.filter(t => t.status === 'รอดำเนินการ').length,
+        doing: mt.filter(t => t.status === 'กำลังทำ').length,
+        done: mt.filter(t => t.status === 'เสร็จแล้ว').length
+      };
+    });
+    const maxVal = Math.max(1, ...monthData.map(d => d.total));
+    const barH = 120;
+    barEl.innerHTML = monthData.map(d => {
+      const doneH = Math.round((d.done / maxVal) * barH);
+      const doingH = Math.round((d.doing / maxVal) * barH);
+      const todoH = Math.round((d.todo / maxVal) * barH);
+      return `<div class="bar-col">
+        <div class="bar-val" style="color:var(--text2)">${d.total}</div>
+        <div class="bar-wrap" style="height:${barH}px;">
+          <div style="width:70%;display:flex;flex-direction:column;justify-content:flex-end;height:100%;">
+            <div title="รอดำเนินการ: ${d.todo}" style="height:${todoH}px;background:var(--yellow);border-radius:3px 3px 0 0;transition:.4s;margin-top:1px;"></div>
+            <div title="กำลังทำ: ${d.doing}" style="height:${doingH}px;background:var(--accent);margin-top:1px;"></div>
+            <div title="เสร็จแล้ว: ${d.done}" style="height:${doneH}px;background:var(--green);margin-top:1px;"></div>
+          </div>
+        </div>
+        <div class="bar-label">${d.m.split(' ')[0]}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // DONUT
+  const todo = filtered.filter(t => t.status === 'รอดำเนินการ').length;
+  const doing = filtered.filter(t => t.status === 'กำลังทำ').length;
+  const done = filtered.filter(t => t.status === 'เสร็จแล้ว').length;
+  const total = filtered.length || 1;
+  renderDonut([
+    { label:'รอดำเนินการ', val:todo, color:'var(--yellow)' },
+    { label:'กำลังทำ', val:doing, color:'var(--accent)' },
+    { label:'เสร็จแล้ว', val:done, color:'var(--green)' }
+  ], total);
+
+  // TYPE LIST
+  const typeMap = {};
+  filtered.forEach(t => { typeMap[t.type] = (typeMap[t.type]||0)+1; });
+  const types = Object.entries(typeMap).sort((a,b) => b[1]-a[1]);
+  const maxT = Math.max(1, ...types.map(x => x[1]));
+  document.getElementById('typeList').innerHTML = types.length ? types.map(([tp,cnt]) =>
+    `<div class="type-item">
+      <span style="font-size:12px;color:var(--text);min-width:70px;">${tp}</span>
+      <div class="type-bar-bg"><div class="type-bar-fill" style="width:${cnt/maxT*100}%"></div></div>
+      <span class="type-count">${cnt}</span>
+    </div>`
+  ).join('') : '<div style="color:var(--text3);padding:20px;font-size:12px;">ไม่มีข้อมูล</div>';
+
+  // SUMMARY
+  document.getElementById('summaryGrid').innerHTML = `
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;">
+      <div style="font-size:11px;color:var(--text3);">งานทั้งหมด</div>
+      <div style="font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--text);">${filtered.length}</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;">
+      <div style="font-size:11px;color:var(--text3);">อัตราสำเร็จ</div>
+      <div style="font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--green);">${filtered.length ? Math.round(done/filtered.length*100) : 0}%</div>
+    </div>
+    <div style="background:var(--bg3);border-radius:8px;padding:14px;">
+      <div style="font-size:11px;color:var(--text3);">ยังค้างอยู่</div>
+      <div style="font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--yellow);">${todo+doing}</div>
+    </div>
+  `;
+
+  // DURATION
+  const withDuration = filtered.filter(t => t.startDate && t.endDate && t.startTime && t.endTime);
+  let durText = '<div style="color:var(--text3);font-size:12px;">ไม่มีข้อมูลระยะเวลา</div>';
+  if (withDuration.length) {
+    const durs = withDuration.map(t => {
+      const s = new Date(t.startDate + 'T' + t.startTime);
+      const e = new Date(t.endDate + 'T' + t.endTime);
+      return (e - s) / 60000;
+    }).filter(d => d > 0);
+    if (durs.length) {
+      const avg = durs.reduce((a,b)=>a+b,0)/durs.length;
+      const h = Math.floor(avg/60), m = Math.round(avg%60);
+      durText = `<div style="font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--purple);">${h}ชม. ${m}น.</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;">เฉลี่ยต่องาน (${durs.length} งาน)</div>`;
+    }
+  }
+  document.getElementById('durationPanel').innerHTML = durText;
+}
+
+function renderDonut(segments, total) {
+  const cx=70, cy=70, r=52, stroke=22;
+  let offset = -Math.PI/2;
+  let svgContent = '';
+  const circumference = 2 * Math.PI * r;
+  segments.forEach(s => {
+    const pct = s.val / total;
+    const arc = pct * circumference;
+    const x1 = cx + r * Math.cos(offset);
+    const y1 = cy + r * Math.sin(offset);
+    const offset2 = offset + pct * 2 * Math.PI;
+    const x2 = cx + r * Math.cos(offset2);
+    const y2 = cy + r * Math.sin(offset2);
+    const large = pct > 0.5 ? 1 : 0;
+    if (s.val > 0) {
+      svgContent += `<path d="M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z" 
+        fill="${s.color}" opacity="0.85" />`;
+    }
+    offset = offset2;
+  });
+  // Hole
+  svgContent += `<circle cx="${cx}" cy="${cy}" r="${r-stroke}" fill="var(--bg2)"/>`;
+  svgContent += `<text x="${cx}" y="${cy}" text-anchor="middle" dy="5" fill="var(--text)" font-size="18" font-weight="700" font-family="IBM Plex Mono">${total}</text>`;
+  document.getElementById('donutSvg').innerHTML = svgContent;
+  document.getElementById('donutLegend').innerHTML = segments.map(s =>
+    `<div class="legend-item">
+      <span><span class="legend-dot" style="background:${s.color}"></span>${s.label}</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--text);">${s.val} <span style="color:var(--text3)">(${total?Math.round(s.val/total*100):0}%)</span></span>
+    </div>`
+  ).join('');
+}
+
+// ===== MISC =====
+function toggleAddPanel() {
+  const b = document.getElementById('addPanelBody');
+  b.style.display = b.style.display === 'none' ? '' : 'none';
+}
+
+function showGASGuide() { switchTabDirect('settings'); }
+function switchTabDirect(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  document.querySelectorAll('.tab-btn')[2].classList.add('active');
+}
+
+// Load saved settings
+if (gasUrl) {
+  document.getElementById('statusDot').className = 'dot-connected';
+  document.getElementById('statusText').textContent = 'ตั้งค่าแล้ว (คลิกรีเฟรชเพื่อโหลด)';
+  document.getElementById('statusText').style.color = 'var(--yellow)';
+}
+</script>
+</body>
+</html>
